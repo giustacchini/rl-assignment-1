@@ -4,9 +4,9 @@ GRID_COLS = 5
 START_STATE = (4,0)
 GOAL_STATE = (0,4)
 
-GOAL_REWARD = 1
-OBSTACLE_REWARD = -1
-STEP_REWARD = 0
+GOAL_REWARD = 5
+OBSTACLE_REWARD = -5
+STEP_REWARD = -1
 
 OBSTACLES = {
     (1,1),
@@ -95,15 +95,15 @@ def get_reward(state, action):
         or attempted_state[1] < 0
         or attempted_state[1] >= GRID_COLS
     ):
-        return STEP_REWARD   # 0
+        return STEP_REWARD   # -1
     
     if attempted_state in OBSTACLES:
-        return OBSTACLE_REWARD # -1
+        return OBSTACLE_REWARD # -5
 
     if attempted_state == GOAL_STATE:
-        return GOAL_REWARD # +1
+        return GOAL_REWARD # +5
 
-    return STEP_REWARD
+    return STEP_REWARD # -1
 
 # Possible transitions
 def get_transitions(state, action):
