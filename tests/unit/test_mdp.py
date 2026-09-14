@@ -1,5 +1,5 @@
 import pytest 
-from src.mdp import move, get_reward, get_transitions
+from mdp import move, get_reward, get_transitions
 
 def test_move_normal_state():
     #Arrange 
