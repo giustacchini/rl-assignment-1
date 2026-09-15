@@ -278,6 +278,101 @@ Policy iteration contains a few different steps:
 
 \textcolor{blue}{Q2: ``Prove that the Bellman optimality equation has a unique solution for a finite MDP with a bounded reward function.``}
 
+\subsubsection*{Setup}
+
+Consider a finite MDP with state space $\mathcal{S}$, finite action sets $\mathcal{A}(s)$, transition
+probabilities $P(s'\mid s,a)$, discount factor $\gamma \in [0,1)$, and a \emph{bounded} reward function:
+there exists $R_{\max}<\infty$ with $|R(s,a,s')|\le R_{\max}$ for all $s,a,s'$.
+
+Since $\mathcal{S}$ is finite, a value function is just a vector $V \in \mathbb{R}^{|\mathcal{S}|}$. We
+measure distance between two value functions with the \textbf{max-norm}:
+\[
+    \|V - U\|_\infty = \max_{s \in \mathcal{S}} |V(s) - U(s)|.
+\]
+This space is \emph{complete} (finite-dimensional real vector spaces always are).
+
+Define the \textbf{Bellman optimality operator} $T$, which takes a value function $V$ and produces a
+new one:
+\[
+    (TV)(s) = \max_{a \in \mathcal{A}(s)} \sum_{s'} P(s'\mid s,a)\big[R(s,a,s') + \gamma V(s')\big].
+\]
+A solution to the Bellman optimality equation is exactly a \textbf{fixed point} of $T$, i.e.\ a $V^*$
+with $TV^* = V^*$.
+
+\subsubsection*{Step 1: $T$ is a contraction}
+
+\begin{theorem}
+For any two value functions $V, U$,
+\[
+    \|TV - TU\|_\infty \le \gamma \|V - U\|_\infty .
+\]
+\end{theorem}
+
+\begin{proof}
+Fix a state $s$. Both $(TV)(s)$ and $(TU)(s)$ are maxima over the same finite action set, so their
+difference is bounded by the largest per-action gap:
+\[
+    |(TV)(s) - (TU)(s)| \;\le\; \max_{a} \left| \sum_{s'} P(s'\mid s,a)\,\gamma\big(V(s')-U(s')\big) \right|.
+\]
+(Intuitively: whichever action attains the max for $V$ can be no more than as far ``ahead'' of $U$'s
+best action as the two functions ever differ, and vice versa the reward terms are identical for $V$
+and $U$ and cancel out.)
+
+Since $P(\cdot \mid s,a)$ is a probability distribution, this average is at most $\gamma$ times the
+worst-case disagreement between $V$ and $U$:
+\[
+    \left|\sum_{s'} P(s'\mid s,a)\,\gamma\big(V(s')-U(s')\big)\right|
+    \le \gamma \sum_{s'} P(s'\mid s,a)\,|V(s')-U(s')|
+    \le \gamma \|V-U\|_\infty .
+\]
+This bound holds for every state $s$, so taking the max over $s$ gives
+\[
+    \|TV - TU\|_\infty \le \gamma\|V-U\|_\infty. \qedhere
+\]
+\end{proof}
+
+Since $\gamma < 1$, this says $T$ strictly shrinks distances exactly like the photocopier at
+$\gamma \times 100\%$ zoom.
+
+\subsubsection*{Step 2: Contractions have a unique fixed point}
+
+\begin{theorem}[Banach Fixed-Point Theorem]
+If $T$ is a contraction on a complete space (i.e.\ $\|TV-TU\| \le \gamma \|V-U\|$ for some
+$\gamma < 1$), then $T$ has \textbf{exactly one} fixed point, and repeatedly applying $T$ from any
+starting point converges to it.
+\end{theorem}
+
+We've shown $T$ satisfies exactly this hypothesis. So this theorem hands us existence, uniqueness,
+and convergence all at once, with no extra work.
+
+\section*{A direct one-line uniqueness check (optional, self-contained)}
+
+Suppose $V_1$ and $V_2$ are both solutions: $TV_1 = V_1$ and $TV_2 = V_2$. Then by Step 1,
+\[
+    \|V_1 - V_2\|_\infty = \|TV_1 - TV_2\|_\infty \le \gamma \|V_1-V_2\|_\infty .
+\]
+Since $\gamma < 1$, the only number $d \ge 0$ satisfying $d \le \gamma d$ is $d=0$. So
+$\|V_1-V_2\|_\infty = 0$, meaning $V_1 = V_2$.
+
+\subsubsection*{Conclusion}
+
+\begin{theorem}
+For a finite MDP with bounded rewards and $\gamma \in [0,1)$, the Bellman optimality equation has a
+unique solution $V^*$.
+\end{theorem}
+
+\begin{proof}
+$T$ is a contraction (Step 1) on a complete space, so by the Banach Fixed-Point Theorem (Step 2) it
+has exactly one fixed point i.e.\ the Bellman optimality equation has exactly one solution.
+\end{proof}
+
+\noindent \textbf{Bonus:} this same argument is why \emph{value iteration} works. Value iteration is
+literally $V_{k+1} = TV_k$ repeatedly photocopying. Banach's theorem guarantees this converges to
+$V^*$ no matter what $V_0$ you start from.
+
+This answer is partially inspired by the explanation in \cite{salunkhe_bellman_2023}.
+
+
 \subsection{Question 3}
 
 \textcolor{blue}{Q3: ``Analyze the challenges of using linear function approximation in value-based reinforcement learning. Discuss the potential issues that may arise and propose methods to mitigate them``}
@@ -290,6 +385,6 @@ Actions and rewards describing the grid-world can be found in the course book at
 % =========== REFERENCES =========== 
 
 \bibliographystyle{ieeetr}
-\bibliography{references}
+\bibliography{rl}
 
 \end{document}
