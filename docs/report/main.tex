@@ -247,15 +247,44 @@
 
 \subsection{Question 1}
 
-{\large Q1: ``Prove that the policy iteration algorithm converges to the optimal policy for a finite MDP with a finite action space for each state.``}
+\textcolor{blue}{Q1: ``Prove that the policy iteration algorithm converges to the optimal policy for a finite MDP with a finite action space for each state.``}
+
+\textbf{First of all, its good to define each key word:}
+
+\textbf{Optimal Policy:} An optimal policy is a strategy or decision-making rule that maximizes the expected cumulative reward for an agent in a given environment. An optimal policy is one that leads to the highest possible long-term reward for the agent, considering the dynamics of the environment and the available actions.
+
+\textbf{Finite MDP:} A Markov Decision Process (MDP) is used to model the decision-making problems where an agent interacts with an environment over discrete time steps. The keyword "finite" only means that the MDP consists of a limited set of states and actions with respective transition function that defines the probabilities of moving from one state to another given an action, and a reward function that assigns a numerical value to each state-action pair.
+
+\textbf{Finite Action Space:} A finite action space refers to a situation in which an agent has a limited number of possible actions to choose from in each state of the environment. Meaning that, for every state in the Markov Decision Process (MDP), there is a finite set of actions that the agent can take.
+
+
+Policy iteration contains a few different steps:
+
+\begin{enumerate}
+    \item \textbf{Initialization:} Start with an arbitrary policy $\pi_0$ and initialize the value function $V_0(s)$ for all states $s$.
+
+    \item \textbf{Policy Evaluation:} For the current policy $\pi_k$, compute the value function $V_k(s)$ for all states $s$ using the Bellman equation:
+          \[
+              V_k(s) = \sum_{a \in A} \pi_k(a|s) \left[ R(s, a) + \gamma \sum_{s' \in S} P(s'|s, a) V_k(s') \right]
+          \]
+
+    \item \textbf{Policy Improvement:} Update the policy $\pi_{k+1}$ by choosing the action that maximizes the expected value for each state:
+          \[
+              \pi_{k+1}(s) = \arg\max_{a \in A} \left[ R(s, a) + \gamma \sum_{s' \in S} P(s'|s, a) V_k(s') \right]
+          \]
+\end{enumerate}
 
 \subsection{Question 2}
 
-{\large Q2: ``Prove that the Bellman optimality equation has a unique solution for a finite MDP with a bounded reward function.``}
+\textcolor{blue}{Q2: ``Prove that the Bellman optimality equation has a unique solution for a finite MDP with a bounded reward function.``}
 
 \subsection{Question 3}
 
-{\large Q3: ``Analyze the challenges of using linear function approximation in value-based reinforcement learning. Discuss the potential issues that may arise and propose methods to mitigate them``}
+\textcolor{blue}{Q3: ``Analyze the challenges of using linear function approximation in value-based reinforcement learning. Discuss the potential issues that may arise and propose methods to mitigate them``}
+
+\section{Practical Part}
+
+Actions and rewards describing the grid-world can be found in the course book at page 60.
 
 
 % =========== REFERENCES =========== 
