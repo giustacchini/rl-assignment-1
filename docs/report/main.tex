@@ -243,7 +243,7 @@
 
 \newpage
 
-\section{Assignment 1: Reinforcement Learning}
+\section{Theoretical Part}
 
 \subsection{Question 1}
 
@@ -643,9 +643,146 @@ This feedback can make learning unstable. Under certain conditions, the estimate
 
 To mitigate this issue we can remove or weaken one component of the Deadly Triad. For example, an \textbf{on-policy method like SARSA} removes the off-policy component, and multi-step returns reduce the bootstrapping property. Reducing one of the elements can help reduce the risk of instability and divergence.
 
-\section{Practical Part}
+\section{Practical part}
+\subsection{Grid World MDP}
 
-Actions and rewards describing the grid-world can be found in the course book at page 60.
+The environment is modelled as a finite Markov Decision Process (MDP). The
+grid has \(5\) rows and \(5\) columns, giving a maximum of \(25\) cells.
+However, five cells are obstacles and cannot be occupied by the agent.
+
+The state space \(\mathcal{S}\) contains every non-obstacle grid cell:
+
+\[
+\mathcal{S} =
+\{(r,c) \mid 0 \leq r < 5,\ 0 \leq c < 5,\ (r,c) \notin \text{Obstacles}\}
+\]
+
+The agent starts in state \((4,0)\), while the goal state is \((0,4)\). The
+obstacle states are:
+
+\[
+\text{Obstacles} =
+\{(1,1), (2,3), (3,1), (3,2), (4,4)\}
+\]
+
+The available actions are:
+
+\[
+\mathcal{A} =
+\{\text{up}, \text{down}, \text{left}, \text{right}\}
+\]
+
+The transition model is stochastic. When the agent selects an action, it
+performs the intended movement with probability \(0.7\). Each of the other
+three directions is taken with probability \(0.1\):
+
+\[
+P(\text{intended direction}) = 0.7
+\]
+
+\[
+P(\text{each unintended direction}) = 0.1
+\]
+
+Therefore, the probabilities for all possible directions add up to \(1.0\).
+For example, when the agent chooses \texttt{up}, it moves up with probability
+\(0.7\), and moves down, left, or right with probability \(0.1\) each.
+
+If a movement would take the agent outside the grid or into an obstacle, the
+agent remains in its current state. However, the attempted movement still
+determines the reward.
+
+The reward function is defined as follows:
+
+\[
+R(s,a,s') =
+\begin{cases}
++5, & \text{if the attempted movement reaches the goal},\\
+-5, & \text{if the attempted movement enters an obstacle},\\
+-1, & \text{otherwise}.
+\end{cases}
+\]
+
+Thus, reaching the goal is encouraged, attempting to move into an obstacle is
+strongly penalized, and all other movements, including movements outside the
+grid, receive a small penalty of \(-1\).
+
+\subsection{Value Iteration}
+
+The value iteration algorithm calculates the best expected reward for every
+state in the grid.
+
+First, the value of every state is initialized to zero:
+
+\[
+V(s) = 0
+\]
+
+The algorithm then repeatedly visits each state and evaluates every possible
+action. For each action, it examines all possible transitions and calculates
+the expected reward using the transition probability, immediate reward, and
+discounted value of the next state:
+
+\[
+Q(s,a) =
+\sum_{s'}
+P(s' \mid s,a)
+\left[
+R(s,a,s') + \gamma V(s')
+\right]
+\]
+
+The largest action value becomes the new value of the state:
+
+\[
+V_{\text{new}}(s) = \max_{a \in \mathcal{A}} Q(s,a)
+\]
+
+After all states have been updated, the algorithm compares the new values with
+the previous values. The largest difference is stored in \(\Delta\). The process
+continues until this difference is smaller than the threshold \(\theta\), which
+means that the values have converged.
+
+Finally, the algorithm returns the converged value dictionary. These values are
+then used to extract the best action for each state.
+
+\subsection{Policy Extraction}
+
+After the value iteration algorithm converges, it returns a value function
+\(V(s)\) containing the final value of every state.
+
+To extract the optimal policy, the algorithm visits every state and evaluates
+each possible action. For every action, it examines all possible transitions
+and calculates its expected value using the transition probability, reward, and
+discounted value of the next state:
+
+\[
+Q(s,a) =
+\sum_{s'}
+P(s' \mid s,a)
+\left[
+R(s,a,s') + \gamma V(s')
+\right]
+\]
+
+The action values are stored in a dictionary. The action with the highest
+expected value is then selected as the best action for that state:
+
+\[
+\pi^*(s) =
+\arg\max_{a \in \mathcal{A}} Q(s,a)
+\]
+
+This process is repeated for every state in the grid. The final policy is a
+dictionary that maps each state to its best action:
+
+\[
+\pi^* : \mathcal{S} \rightarrow \mathcal{A}
+\]
+
+Therefore, the value function tells us how valuable each state is, while the
+optimal policy uses these values to decide which action the agent should take
+from each state.
 
 
 % =========== REFERENCES =========== 
