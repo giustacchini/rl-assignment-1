@@ -243,7 +243,7 @@
 
 \newpage
 
-\section{Assignment 1: Reinforcement Learning}
+\section{Theoretical Part}
 
 \subsection{Question 1}
 
@@ -435,14 +435,418 @@ This answer is partially inspired by the explanation in \cite{salunkhe_bellman_2
 
 \textcolor{blue}{Q3: ``Analyze the challenges of using linear function approximation in value-based reinforcement learning. Discuss the potential issues that may arise and propose methods to mitigate them``}
 
-\section{Practical Part}
+In reinforcement learning, tabular methods store a separate value for every state or state-action pair. This works well for small problems, but it becomes impractical when the state space is very large or continuous. Function approximation addresses this shortcoming by using fewer parameters to describe the value function. In linear function approximation, the state-value function is defined by
 
-Actions and rewards describing the grid-world can be found in the course book at page 60.
+\[
+    \hat{v}(s,\mathbf{w})=\mathbf{w}^T\mathbf{x}(s),
+\]
+
+where $\mathbf{x}(s)$ is the feature vector that represents the state $s$ and $\mathbf{w}$ is the vector of learned weights. A similar representation can be used for action values:
+
+\[
+    \hat{q}(s,a,\mathbf{w})=\mathbf{w}^T\mathbf{x}(s,a).
+\]
+
+Linear function approximation is computationally efficient and allows learning to generalize between similar states, but it also brings a new set of challenges.
+
+\subsubsection*{1. Approximation Error}
+
+Linear function approximation can only represent value functions that can be expressed using the selected features.
+
+Suppose
+\[
+    \hat v(s,\mathbf w)=w_1x_1+w_2x_2
+\]
+but the true value is
+\[
+    v_\pi(s)=2x_1+3x_2+4x_1x_2.
+\]
+
+The term $4x_1x_2$ cannot be represented using only $x_1$ and $x_2$. Therefore, some approximation error may remain even after training.
+
+A possible mitigation is to introduce richer features. For example, an \textbf{interaction feature} can be added:
+\[
+    x_3=x_1x_2.
+\]
+
+The approximation then becomes
+\[
+    \hat v(s,\mathbf w)
+    =w_1x_1+w_2x_2+w_3x_1x_2.
+\]
+
+If the true value function is
+\[
+    v_\pi(s)=2x_1+3x_2+4x_1x_2,
+\]
+choosing
+\[
+    (w_1,w_2,w_3)=(2,3,4)
+\]
+represents it exactly. The model is still linear in the weights, but the addition of the interaction term $x_1x_2$ adds to the expressiveness of the model. Other feature construction methods, such as tile coding, can also provide richer representations and reduce approximation error.
+
+\subsubsection*{2. Feature Selection}
+
+The approximation depends directly on the feature vector:
+\[
+    \mathbf{x}(s) =
+    [x_1(s),x_2(s),\ldots,x_n(s)]^T.
+\]
+
+If important information is missing from $\mathbf{x}(s)$, the weights cannot recover it.
+
+For example, suppose two states in the same gridworld have the agent at the same position but different obstacle configurations. If the features  contain only the agent position:
+
+\[
+    \mathbf{x}(s_1)=
+    \begin{bmatrix}
+        2 \\
+        3
+    \end{bmatrix},
+    \qquad
+    \mathbf{x}(s_2)=
+    \begin{bmatrix}
+        2 \\
+        3
+    \end{bmatrix}.
+\]
+
+Then
+\[
+    \hat v(s_1)
+    =
+    \mathbf{w}^T\mathbf{x}(s_1)
+    =
+    \mathbf{w}^T\mathbf{x}(s_2)
+    =
+    \hat v(s_2).
+\]
+
+The model is \textbf{forced to give them the same value}, even if
+\[
+    v_\pi(s_1)\neq v_\pi(s_2).
+\]
+
+\textbf{A possible mitigation is feature engineering}, where relevant information is added to the feature representation. For example,
+\[
+    \mathbf{x}(s)=
+    [\text{agent position},\text{obstacle information}]^T.
+\]
+
+This allows the approximation to distinguish between states that would otherwise have identical features but different values.
+\subsubsection*{3. Generalization and Interference}
+
+With linear function approximation, different states may share the same features and weights. Therefore, learning from one state can also change the estimated value of other states.
+
+For example, suppose two states have the feature vectors
+\[
+    \mathbf{x}(s_1)=[1,1,0]
+\]
+and
+\[
+    \mathbf{x}(s_2)=[1,0,1].
+\]
+
+Both states share the first feature. Since the value estimate is
+\[
+    \hat v(s,\mathbf w)=\mathbf w^T\mathbf x(s),
+\]
+both states use the same weight $w_1$. Therefore, whenever $w_1$ is updated during learning in state $s_1$, there will be an effect on the estimation of the value of $s_2$ as well.
+
+Such an effect is known as generalization, and it can be useful when the states are similar, since learning from one state can improve the value estimate of another. However, if the states are unrelated, the same update may incorrectly change the value of the other state. This unwanted effect is called \textbf{interference}.
+
+A possible mitigation is to use more localized features, such as \textbf{tile coding}, so that similar states share features while unrelated states have less feature overlap.
+
+\subsubsection*{4. Correlated Experience}
+
+In RL, training samples are sequential:
+\[
+    S_t \rightarrow S_{t+1} \rightarrow S_{t+2} \rightarrow \cdots
+\]
+so consecutive samples are often correlated rather than independent.
+
+For example, an agent moving through a grid might observe
+\[
+    (2,2)\rightarrow(3,2)\rightarrow(4,2)\rightarrow(5,2).
+\]
+
+These states are closely related. If the agent repeatedly follows similar trajectories, some parts of the state space receive many updates while others receive very few:
+\[
+    N(s_1)\gg N(s_2),
+\]
+where $N(s)$ is the \textbf{number of visits to state $s$}.
+
+The approximation may consequently become accurate for frequently visited states but poor for rarely visited states.
+
+A mitigation is sufficient \textbf{exploration},  so that the agent investigate the environment to guarantee more effective coverage of the relevant state space. Another mitigation is \textbf{Experience Replay}, where diverse past experiences are stored and reused during training. This can reduce the strong temporal correlation between consecutive samples. However, if the policy changes, old experiences may become off-policy.
+
+\subsubsection*{5. Non-Stationary and Bootstrapped Targets}
+
+TD learning uses a \textbf{bootstrapped target}
+\[
+    U_t = R_{t+1} + \gamma \hat v(S_{t+1},\mathbf w_t).
+\]
+
+The target is \textbf{bootstrapped} because it uses the current estimated value of the next state,
+$\hat v(S_{t+1},\mathbf w_t)$, instead of waiting for the complete return.
+
+However, this estimate depends on the learned weights $\mathbf w_t$. For example, suppose
+\[
+    \hat v(S_{t+1},\mathbf w_t)=5.
+\]
+
+Then
+\[
+    U_t=1+0.9(5)=5.5.
+\]
+
+After learning, the weights change. Suppose the new estimate becomes
+\[
+    \hat v(S_{t+1},\mathbf w_{t+1})=6.
+\]
+
+The corresponding target becomes
+\[
+    1+0.9(6)=6.4.
+\]
+
+This is the \textbf{non-stationary target problem}: while the model is learning toward the target, changes in the weights can also change the target itself.
+
+One possible mitigation is to reduce or avoid bootstrapping. \textbf{Monte Carlo} instead uses the observed return
+\[
+    G_t = R_{t+1}+\gamma R_{t+2}+\gamma^2R_{t+3}+\cdots
+\]
+without using $\hat v(S_{t+1})$ as the target.
+
+Multi-step TD and TD($\lambda$) provide a compromise:
+\[
+    \text{1-step TD}
+    \longleftrightarrow
+    \text{multi-step}
+    \longleftrightarrow
+    \text{Monte Carlo}.
+\]
+
+This can reduce dependence on the current approximation, although Monte Carlo generally introduces higher variance.
+
+\subsubsection*{6. Instability, Divergence, and the Deadly Triad}
+
+One of the most serious challenges occurs when three components are combined:
+\[
+    \boxed{
+        \text{Function Approximation}
+        +
+        \text{Bootstrapping}
+        +
+        \text{Off-policy Learning}
+    }
+\]
+
+This combination is called the \textbf{Deadly Triad} and can cause the value estimates to diverge rather than converge.
+
+Consider Q-learning with linear function approximation:
+\[
+    \hat q(s,a,\mathbf w)=\mathbf w^T\mathbf x(s,a)
+\]
+and the TD error
+\[
+    \delta_t =
+    R_{t+1}
+    +\gamma\max_{a'}\hat q(S_{t+1},a',\mathbf w)
+    -\hat q(S_t,A_t,\mathbf w).
+\]
+
+The three components can be seen directly in this update:
+\[
+    \underbrace{\hat q(s,a,\mathbf w)}
+    _{\text{function approximation}},
+    \qquad
+    \underbrace{
+        R_{t+1}+\gamma\max_{a'}\hat q(S_{t+1},a',\mathbf w)
+    }_{\text{bootstrapped target}}.
+\]
+and Q-learning is \textbf{off-policy} because the action used in the target,
+\[
+    \arg\max_{a'}\hat q(S_{t+1},a',\mathbf w),
+\]
+can be different from the action actually selected by the behaviour policy.
+
+For example, suppose
+\[
+    R=0,\qquad \gamma=0.9,
+\]
+the current estimate is
+\[
+    \hat q(S_t,A_t)=5,
+\]
+and the estimated value of the best next action is
+\[
+    \max_{a'}\hat q(S_{t+1},a')=10.
+\]
+
+The TD target is therefore
+\[
+    U_t=0+0.9(10)=9,
+\]
+and the TD error becomes
+\[
+    \delta_t=9-5=4.
+\]
+
+Since the TD error is positive, the algorithm updates the weights to increase the current estimate $\hat q(S_t,A_t)$.
+
+In terms of \textbf{linear function approximation}, the weight vector is shared by several state--action pairs. Thus, the weight update of the current estimate may also change other estimates, including the next-state estimate used for computing the bootstrapped target.
+
+This feedback can make learning unstable. Under certain conditions, the estimates may keep on growing instead of reaching a steady value; such a situation is called divergence.
+
+To mitigate this issue we can remove or weaken one component of the Deadly Triad. For example, an \textbf{on-policy method like SARSA} removes the off-policy component, and multi-step returns reduce the bootstrapping property. Reducing one of the elements can help reduce the risk of instability and divergence.
+
+\section{Practical part}
+\subsection{Grid World MDP}
+
+The environment is modelled as a finite Markov Decision Process (MDP). The
+grid has \(5\) rows and \(5\) columns, giving a maximum of \(25\) cells.
+However, five cells are obstacles and cannot be occupied by the agent.
+
+The state space \(\mathcal{S}\) contains every non-obstacle grid cell:
+
+\[
+    \mathcal{S} =
+    \{(r,c) \mid 0 \leq r < 5,\ 0 \leq c < 5,\ (r,c) \notin \text{Obstacles}\}
+\]
+
+The agent starts in state \((4,0)\), while the goal state is \((0,4)\). The
+obstacle states are:
+
+\[
+    \text{Obstacles} =
+    \{(1,1), (2,3), (3,1), (3,2), (4,4)\}
+\]
+
+The available actions are:
+
+\[
+    \mathcal{A} =
+    \{\text{up}, \text{down}, \text{left}, \text{right}\}
+\]
+
+The transition model is stochastic. When the agent selects an action, it
+performs the intended movement with probability \(0.7\). Each of the other
+three directions is taken with probability \(0.1\):
+
+\[
+    P(\text{intended direction}) = 0.7
+\]
+
+\[
+    P(\text{each unintended direction}) = 0.1
+\]
+
+Therefore, the probabilities for all possible directions add up to \(1.0\).
+For example, when the agent chooses \texttt{up}, it moves up with probability
+\(0.7\), and moves down, left, or right with probability \(0.1\) each.
+
+If a movement would take the agent outside the grid or into an obstacle, the
+agent remains in its current state. However, the attempted movement still
+determines the reward.
+
+The reward function is defined as follows:
+
+\[
+    R(s,a,s') =
+    \begin{cases}
+        +5, & \text{if the attempted movement reaches the goal},   \\
+        -5, & \text{if the attempted movement enters an obstacle}, \\
+        -1, & \text{otherwise}.
+    \end{cases}
+\]
+
+Thus, reaching the goal is encouraged, attempting to move into an obstacle is
+strongly penalized, and all other movements, including movements outside the
+grid, receive a small penalty of \(-1\).
+
+\subsection{Value Iteration}
+
+The value iteration algorithm calculates the best expected reward for every
+state in the grid.
+
+First, the value of every state is initialized to zero:
+
+\[
+    V(s) = 0
+\]
+
+The algorithm then repeatedly visits each state and evaluates every possible
+action. For each action, it examines all possible transitions and calculates
+the expected reward using the transition probability, immediate reward, and
+discounted value of the next state:
+
+\[
+    Q(s,a) =
+    \sum_{s'}
+    P(s' \mid s,a)
+    \left[
+        R(s,a,s') + \gamma V(s')
+        \right]
+\]
+
+The largest action value becomes the new value of the state:
+
+\[
+    V_{\text{new}}(s) = \max_{a \in \mathcal{A}} Q(s,a)
+\]
+
+After all states have been updated, the algorithm compares the new values with
+the previous values. The largest difference is stored in \(\Delta\). The process
+continues until this difference is smaller than the threshold \(\theta\), which
+means that the values have converged.
+
+Finally, the algorithm returns the converged value dictionary. These values are
+then used to extract the best action for each state.
+
+\subsection{Policy Extraction}
+
+After the value iteration algorithm converges, it returns a value function
+\(V(s)\) containing the final value of every state.
+
+To extract the optimal policy, the algorithm visits every state and evaluates
+each possible action. For every action, it examines all possible transitions
+and calculates its expected value using the transition probability, reward, and
+discounted value of the next state:
+
+\[
+    Q(s,a) =
+    \sum_{s'}
+    P(s' \mid s,a)
+    \left[
+        R(s,a,s') + \gamma V(s')
+        \right]
+\]
+
+The action values are stored in a dictionary. The action with the highest
+expected value is then selected as the best action for that state:
+
+\[
+    \pi^*(s) =
+    \arg\max_{a \in \mathcal{A}} Q(s,a)
+\]
+
+This process is repeated for every state in the grid. The final policy is a
+dictionary that maps each state to its best action:
+
+\[
+    \pi^* : \mathcal{S} \rightarrow \mathcal{A}
+\]
+
+Therefore, the value function tells us how valuable each state is, while the
+optimal policy uses these values to decide which action the agent should take
+from each state.
 
 
 % =========== REFERENCES =========== 
 
 \bibliographystyle{ieeetr}
 \bibliography{rl}
+\nocite{sutton2018reinforcement}
 
 \end{document}
