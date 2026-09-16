@@ -258,21 +258,79 @@
 \textbf{Finite Action Space:} A finite action space refers to a situation in which an agent has a limited number of possible actions to choose from in each state of the environment. Meaning that, for every state in the Markov Decision Process (MDP), there is a finite set of actions that the agent can take.
 
 
-Policy iteration contains a few different steps:
+Policy iteration contains a three different steps:
 
 \begin{enumerate}
     \item \textbf{Initialization:} Start with an arbitrary policy $\pi_0$ and initialize the value function $V_0(s)$ for all states $s$.
 
-    \item \textbf{Policy Evaluation:} For the current policy $\pi_k$, compute the value function $V_k(s)$ for all states $s$ using the Bellman equation:
+    \item \textbf{Policy Evaluation:} For the current policy $\pi_k$, the value function $V_k(s)$ is computed for all states $s$ using the Bellman equation:
           \[
-              V_k(s) = \sum_{a \in A} \pi_k(a|s) \left[ R(s, a) + \gamma \sum_{s' \in S} P(s'|s, a) V_k(s') \right]
+              V^{\pi}(s) = \sum_{a} \pi(a|s) \left[ R(s, a) + \gamma \sum_{s'} P(s'|s, a) V^{\pi}(s') \right]
           \]
 
-    \item \textbf{Policy Improvement:} Update the policy $\pi_{k+1}$ by choosing the action that maximizes the expected value for each state:
+          However, for a deterministic policy, the action is chosen with probability 1, so the equation simplifies to:
           \[
-              \pi_{k+1}(s) = \arg\max_{a \in A} \left[ R(s, a) + \gamma \sum_{s' \in S} P(s'|s, a) V_k(s') \right]
+              V^{\pi}(s) = R(s, \pi(s)) + \gamma \sum_{s'} P(s'|s, \pi(s)) V^{\pi}(s')
           \]
+
+    \item \textbf{Policy Improvement:} The policy $\pi_{k+1}$ is updated by choosing the action that maximizes the expected value for each state:
+          \[
+              \pi'(s) = \arg\max_{a} \left[ R(s, a) + \gamma \sum_{s'} P(s'|s, a) V^{\pi}(s') \right]
+          \]
+
+          After a number of iterations, the policy will converge to the optimal policy:  $\pi = \pi^*$, and the value function will converge to the optimal value function $V = V^*$.
 \end{enumerate}
+
+\subsubsection*{Main idea: Policy Improvement cannot make the policy worse}
+
+Define the action-value function under policy $\pi$ as:
+\[
+    Q^{\pi}(s, a) = R(s, a) + \gamma \sum_{s'} P(s'|s, a) V^{\pi}(s')
+\]
+
+Since $V^{\pi}$ is the value of following $\pi$,
+\[
+    V^{\pi}(s) = Q^{\pi}(s, \pi(s))
+\]
+
+The policy improvement step chooses:
+\[
+    \pi'(s) = \arg\max_{a} Q^{\pi}(s, a)
+\]
+
+Therefore,
+\[
+    Q^{\pi}(s, a) = R(s, a) + \gamma \sum_{s'} P(s'|s, a) V^{\pi}(s')
+\]
+
+So we have
+\[
+    R(s, \pi' (s)) + \gamma \sum_{s'} P(s'|s, \pi'(s)) V^{\pi}(s') \ge V^{\pi}(s') \quad\quad (1)
+\]
+
+This says that taking the improved action once, and then following the old policy, is at least as good as following the old policy immediately.
+
+\textbf{From (1)}, we apply the reasoning recursively to get:
+\[
+    V^{\pi}(s) \leq \mathbb{E}_{\pi'} \left[ R_0 + \gamma R_1 + \gamma R_2^2 + \dots\right].
+\]
+
+On the right side we simply get the expected value for following the new policy $\pi'$ from $s$, which is $V^{\pi'}(s)$. So we have,
+\[
+    V^{\pi'}(s) \geq V^{\pi}(s), \quad \forall s \in \mathcal{S}
+\]
+
+the algorithm will eventually converge to the optimal policy because of the finite number of states and actions $\Rightarrow$ (finite number of policies) so the policy improvement must eventually converge to the optimal policy.
+
+
+Basically the idea of policy improvement is based of four main points:
+
+\begin{itemize}
+    \item $\boxed{\text{Policy improvement} \Rightarrow V^{\pi_{k+1}} \ge V^{\pi_k}} $
+    \item $\boxed{\text{Finite number of policies} \Rightarrow \text{algorithm must terminate} } $
+    \item $\boxed{\text{Termination} \Rightarrow \text{no action can improve the policy} } $
+    \item $\boxed{\text{No improving action} \Rightarrow \text{Bellman optimality equation} \Rightarrow \pi = \pi^* } $
+\end{itemize}
 
 \subsection{Question 2}
 
