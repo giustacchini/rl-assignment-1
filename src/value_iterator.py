@@ -48,6 +48,8 @@ def extract_policy(value):
 
 def main():
     value = value_iterator()
+    policy = extract_policy(value)
+    print(policy)
 
 if __name__ == "__main__":
     main()
